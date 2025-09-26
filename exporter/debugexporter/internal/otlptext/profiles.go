@@ -22,9 +22,9 @@ func (textProfilesMarshaler) MarshalProfiles(pd pprofile.Profiles) ([]byte, erro
 	dic := pd.Dictionary()
 	rps := pd.ResourceProfiles()
 
-	buf.logProfileMappings(dic.MappingTable())
-	buf.logProfileLocations(dic.LocationTable())
-	buf.logProfileFunctions(dic.FunctionTable())
+	buf.logProfileMappings(dic.MappingTable(), dic)
+	buf.logProfileLocations(dic.LocationTable(), dic)
+	buf.logProfileFunctions(dic.FunctionTable(), dic)
 	buf.logAttributesWithIndentation(
 		"Attribute table",
 		keyValueAndUnitsToMap(dic.AttributeTable()),
@@ -36,6 +36,7 @@ func (textProfilesMarshaler) MarshalProfiles(pd pprofile.Profiles) ([]byte, erro
 		0)
 
 	buf.logStringTable(dic.StringTable())
+	buf.logStackTable(dic.StackTable())
 
 	for i := 0; i < rps.Len(); i++ {
 		buf.logEntry("ResourceProfiles #%d", i)

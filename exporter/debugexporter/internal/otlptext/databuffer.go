@@ -345,6 +345,7 @@ func (b *dataBuffer) logProfileSamples(ss pprofile.SampleSlice, dic pprofile.Pro
 		sample := ss.At(i)
 
 		b.logEntry("        Values: %d", sample.Values().AsRaw())
+		b.logEntry("		Stack index: %d", sample.StackIndex())
 
 		if lai := sample.AttributeIndices().Len(); lai > 0 {
 			b.logEntry("        Attributes:")
@@ -356,7 +357,7 @@ func (b *dataBuffer) logProfileSamples(ss pprofile.SampleSlice, dic pprofile.Pro
 	}
 }
 
-func (b *dataBuffer) logProfileMappings(ms pprofile.MappingSlice) {
+func (b *dataBuffer) logProfileMappings(ms pprofile.MappingSlice, dic pprofile.ProfilesDictionary) {
 	if ms.Len() == 0 {
 		return
 	}
@@ -369,11 +370,19 @@ func (b *dataBuffer) logProfileMappings(ms pprofile.MappingSlice) {
 		b.logEntry("    Memory limit: %d", mapping.MemoryLimit())
 		b.logEntry("    File offset: %d", mapping.FileOffset())
 		b.logEntry("    File name: %d", mapping.FilenameStrindex())
-		b.logEntry("    Attributes: %d", mapping.AttributeIndices().AsRaw())
+		// b.logEntry("    Attributes: %d", mapping.AttributeIndices().AsRaw())
+
+		if lai := mapping.AttributeIndices().Len(); lai > 0 {
+			b.logEntry("    Attributes:")
+			for j := 0; j < lai; j++ {
+				attr := dic.AttributeTable().At(int(mapping.AttributeIndices().At(j)))
+				b.logEntry("		-> %s: %s", dic.StringTable().At(int(attr.KeyStrindex())), attr.Value().AsRaw())
+			}
+		}
 	}
 }
 
-func (b *dataBuffer) logProfileLocations(ls pprofile.LocationSlice) {
+func (b *dataBuffer) logProfileLocations(ls pprofile.LocationSlice, dic pprofile.ProfilesDictionary) {
 	if ls.Len() == 0 {
 		return
 	}
@@ -393,11 +402,18 @@ func (b *dataBuffer) logProfileLocations(ls pprofile.LocationSlice) {
 				b.logEntry("        Column: %d", line.Column())
 			}
 		}
-		b.logEntry("    Attributes: %d", location.AttributeIndices().AsRaw())
+
+		if lai := location.AttributeIndices().Len(); lai > 0 {
+			b.logEntry("    Attributes:")
+			for j := 0; j < lai; j++ {
+				attr := dic.AttributeTable().At(int(location.AttributeIndices().At(j)))
+				b.logEntry("		-> %s: %s", dic.StringTable().At(int(attr.KeyStrindex())), attr.Value().AsRaw())
+			}
+		}
 	}
 }
 
-func (b *dataBuffer) logProfileFunctions(fs pprofile.FunctionSlice) {
+func (b *dataBuffer) logProfileFunctions(fs pprofile.FunctionSlice, dic pprofile.ProfilesDictionary) {
 	if fs.Len() == 0 {
 		return
 	}
@@ -406,9 +422,9 @@ func (b *dataBuffer) logProfileFunctions(fs pprofile.FunctionSlice) {
 		b.logEntry("Function #%d", i)
 		function := fs.At(i)
 
-		b.logEntry("    Name: %d", function.NameStrindex())
-		b.logEntry("    System name: %d", function.SystemNameStrindex())
-		b.logEntry("    Filename: %d", function.FilenameStrindex())
+		b.logEntry("    Name: %s", dic.StringTable().At(int(function.NameStrindex())))
+		b.logEntry("    System name: %s", dic.StringTable().At(int(function.SystemNameStrindex())))
+		b.logEntry("    Filename: %s", dic.StringTable().At(int(function.FilenameStrindex())))
 		b.logEntry("    Start line: %d", function.StartLine())
 	}
 }
@@ -421,6 +437,17 @@ func (b *dataBuffer) logStringTable(ss pcommon.StringSlice) {
 	b.logEntry("String table:")
 	for i := 0; i < ss.Len(); i++ {
 		b.logEntry("    %s", ss.At(i))
+	}
+}
+
+func (b *dataBuffer) logStackTable(ss pprofile.StackSlice) {
+	if ss.Len() == 0 {
+		return
+	}
+
+	for i := 0; i < ss.Len(); i++ {
+		b.logEntry("Stack #%d", i)
+		b.logEntry("    Location indices: %d", ss.At(i).LocationIndices().AsRaw())
 	}
 }
 
